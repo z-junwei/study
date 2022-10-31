@@ -4,7 +4,7 @@
 
 ### 1-1 Spring模块梳理
 
-![Spring4.x主要模块](images/Spring-study/202210311115278.png)
+
 
 **spring-core**
 
@@ -34,7 +34,7 @@ Spring主要面向Bean编程（BOP）
 
 推荐下载**xxx.RELEASE版本**（5.2.0.RELEASE）
 
-<img src="images/Spring-study/202210311143331.png" alt="image-20221031114359276" style="zoom: 50%;" />
+
 
 2、配置gradle阿里云镜像下载
 
@@ -47,7 +47,7 @@ repositories {
 }
 ```
 
-![image-20221031142350361](images/Spring-study/202210311423386.png)
 
-![image-20221031142329436](images/Spring-study/202210311423468.png)
+
+
 
