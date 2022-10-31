@@ -34,7 +34,7 @@ Spring主要面向Bean编程（BOP）
 
 推荐下载**xxx.RELEASE版本**（5.2.0.RELEASE）
 
-
+![202210311435368](https://raw.githubusercontent.com/z-junwei/images/mian/img/Spring/202210311510674.png)
 
 2、配置gradle阿里云镜像下载
 
