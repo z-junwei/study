@@ -1,9 +1,5 @@
 # 笔记-剑指Java自研框架，决胜Spring源码
 
-学习课程：
-
-![image-20221101170533811](https://raw.githubusercontent.com/z-junwei/images/mian/img/Spring/202211011705840.png)
-
 ## 一 自研IoC框架
 
 ### 1 实现思路
@@ -216,8 +212,7 @@ public class ClassUnitTest {
 
 测试结果：
 
-![image-20221101170040640](https://raw.githubusercontent.com/z-junwei/images/mian/img/Spring/202211011700683.png)
+![image-20221101170040640](https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/202211021006260.png)
 
 
 
-![](https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/202211020959967.jpg)
