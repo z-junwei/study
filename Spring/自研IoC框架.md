@@ -1,6 +1,4 @@
-# 自研IoC框架
-
-## 1 实现思路
+## 实现思路
 
 **一个框架最基本的功能：**
 
@@ -9,13 +7,13 @@
 - 注入对象
 - 提供通用的工具类
 
-**Io容器的实现：**
+**IoC容器的实现：**
 
 `创建注解 -> 提取标记对象 -> 实现容器 -> 依赖注入`
 
-## 2 实现
+## 实现
 
-### 1 创建注解
+### 创建注解
 
 这里注解的作用和Spring的类似。
 
@@ -33,22 +31,7 @@ public @interface Service {
 }
 ```
 
-```Java
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface Repository {
-}
-```
-
-```Java
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface Component {
-}
-
-```
-
-### 2 提取标记对象
+### 提取标记对象
 
 实现思路：
 
@@ -56,13 +39,16 @@ public @interface Component {
 - 遍历所有类，获取被注解标记的类并加载进容器里
 
 ```java
-package org.IoC.core.utils;
+package org.IoC.utils;
 
 import lombok.extern.slf4j.Slf4j;
+import sun.nio.cs.ext.IBM037;
 
+import javax.accessibility.Accessible;
 import java.io.File;
 import java.io.FileFilter;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.HashSet;
@@ -136,7 +122,7 @@ public class ClassUtil {
 			private void addToClassSet(String absoluteFilePath) {
 				//1.从class文件的绝对路径里提取包含了package的类名
 				//注意：路径最好不要带有中文
-				//如：D:\study\SpringSourceCode\spring-framework-5.2.0.RELEASE\simpleframework\src\main\java\com\zjw\entity\Student.java
+				//如：D:\study\SpringSourceCode\spring-framework-5.2.0.RELEASE\simpleframework\src\main\java\com\zjw\entity\User.java
 				//弄成：com.zjw.entity.Student
 				absoluteFilePath = absoluteFilePath.replace(File.separator, ".");
 				String className = absoluteFilePath.substring(absoluteFilePath.indexOf(packageName));
@@ -196,6 +182,23 @@ public class ClassUtil {
 		}
 	}
 
+	/**
+	 * 设置类的属性值
+	 * @param field 成员变量
+	 * @param target 类实例
+	 * @param value 成员变量的值
+	 * @param accessible 是否允许设置私有属性
+	 */
+	public static void setField(Field field, Object target, Object value, boolean accessible){
+		field.setAccessible(accessible);
+		try {
+			field.set(target, value);
+		} catch (IllegalAccessException e) {
+			log.error("setField error", e);
+			throw new RuntimeException(e);
+		}
+	}
+
 
 	public static void main(String[] args) {
 		File packageDirectory = new File("D:\\study\\SpringSourceCode\\spring-framework-5.2.0.RELEASE\\simpleframework\\target\\classes\\com\\zjw\\entity");
@@ -222,7 +225,7 @@ public class ClassUnitTest {
 	public void getClassPackageTest(){
 		Set<Class<?>> classSet = ClassUtil.getPackageClass("com.zjw.entity");
 		System.out.println(classSet);
-		Assertions.assertEquals(3, classSet.size());
+		Assertions.assertEquals(12, classSet.size());
 	}
 }
 
@@ -231,11 +234,9 @@ public class ClassUnitTest {
 
 测试结果：
 
-![image-20221101170040640](https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/202211021006260.png)
+![image-20221104151955799](https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041602520.png)
 
-
-
-### 3 实现容器
+### 实现容器
 
 #### 单例模式问题
 
@@ -254,7 +255,7 @@ public class StarvingSingleton {
 
 这种并不安全，可以利用反射机制来破除无参构造private的防御。
 
-> **反射为啥能破环单例？**
+> **反射为啥能破坏单例？**
 >
 > 通过反射获得单例类的构造函数，由于该构造函数是private的，通过setAccessible(true)指示反射的对象在使用时应该取消 [Java](http://lib.csdn.net/base/javase) 语言访问检查，使得私有的构造函数能够被访问，这样使得单例模式失效。
 
@@ -273,7 +274,7 @@ public class SingletonDemo {
 
 运行结果：
 
-![image-20221102105920885](https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/202211021059951.png)
+![image-20221102105920885](https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041602014.png)
 
 **解决办法：**
 
@@ -298,9 +299,7 @@ public class StarvingSingletonEnum {
 		ContainerHolder(){
 			instance = new StarvingSingletonEnum();
 		}
-	}
-
-	
+	}	
 }
 ```
 
@@ -319,7 +318,7 @@ public class SingletonDemo {
 }
 ```
 
-<img src="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/202211021348290.png" alt="image-20221102134837245" style="zoom: 80%;" />
+![202211021348290](https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041602966.png)
 
 直接测试枚举类：
 
@@ -334,7 +333,7 @@ public static void main(String[] args) throws NoSuchMethodException, InvocationT
 }
 ```
 
-<img src="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/202211021349240.png" alt="image-20221102134918203" style="zoom:80%;" />
+![202211021349240](https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041601162.png)
 
 
 
@@ -344,18 +343,16 @@ public static void main(String[] args) throws NoSuchMethodException, InvocationT
 - 容器的加载
 - 容器的操作方式
 
-##### **（1）保存Class对象以及其实例的载体**
+##### 保存Class对象以及其实例的载体
 
 ```java
-/**
+	/**
 	 * 存放所有被配置标记的目标对象的Map
 	 */
 	private final Map<Class<?>, Object> beanMap = new ConcurrentHashMap<>();
 ```
 
-
-
-##### **（2）容器的加载**
+##### 容器的加载
 
 - 配置的管理与获取
 
@@ -365,14 +362,10 @@ public static void main(String[] args) throws NoSuchMethodException, InvocationT
 	 */
 	private static final List<Class<? extends Annotation>> BEAN_ANNOTATION =
 			Arrays.asList(
-					Component.class,
 					Controller.class,
-					Repository.class,
 					Service.class
 			);
 ```
-
-
 
 - 获取指定范围内的Class对象
 
@@ -554,6 +547,23 @@ public class BeanContainer {
 		System.out.println(beanMap);
 		loaded = true;
 	}
+    
+    /**
+	 * 设置类的属性值
+	 * @param field 成员变量
+	 * @param target 类实例
+	 * @param value 成员变量的值
+	 * @param accessible 是否允许设置私有属性
+	 */
+	public static void setField(Field field, Object target, Object value, boolean accessible){
+		field.setAccessible(accessible);
+		try {
+			field.set(target, value);
+		} catch (IllegalAccessException e) {
+			log.error("setField error", e);
+			throw new RuntimeException(e);
+		}
+	}
 }
 
 ```
@@ -583,11 +593,11 @@ public class BeanContainerTest {
 
 结果编译成功，说明加了自定义注解的类已经被成功放入到了Map中，打印一下beanMap看看。
 
-![image-20221102160914939](https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/202211021609991.png)
+![image-20221102160914939](https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041600688.png)
 
 
 
-##### **（3）容器的操作方式**
+##### 容器的操作方式
 
 涉及到容器的增删改查
 
@@ -692,7 +702,7 @@ public class BeanContainerTest {
 	}
 ```
 
-测试某些方法：
+**测试某些方法：**
 
 ```java
 //指定测试类的执行顺序
@@ -746,4 +756,218 @@ public class BeanContainerTest {
 }
 ```
 
-![image-20221102172418850](https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/202211021724902.png)
+![image-20221102172418850](https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041559274.png)
+
+### 依赖注入
+
+目前容器里面管理的Bean实例仍可能是不完备的
+
+- 实例里面某些必须的成员变量还没有被创建出来
+
+例如，需要添加类似@Autowired的注解将其注入。
+
+<img src="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041603678.png" alt="202211041600589" style="zoom:67%;" />
+
+**实现思路：**
+
+- 定义相关的注解标签
+- 实现创建被注解标记的成员变量实例，并将其注入到成员变量里
+- 依赖注入的使用
+
+#### 定义相关的注解标签
+
+```java
+package org.IoC.inject.annotation;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+/**
+ * 目前支持成员变量注入
+ */
+@Target(ElementType.FIELD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Autowired {
+	//用来处理一个接口有多个是实现类的情况,可以给实现类定义一个value区分
+	String value() default "";
+}
+
+```
+
+#### 实现依赖注入
+
+<img src="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041604539.png" alt="202211041449933" style="zoom:67%;" />
+
+**思路（以上图为例）：**
+
+1. 首先要获取单例bean容器`BeanContainer`，目的是将@Controller标记的UserController加载到容器中。
+2. 再通过容器获取UserController的Class对象，取出所有的属性（userService、name）。
+3. 再筛选出被@Autowired标记的属性（userService）。
+4. 获取成员变量的类型。获取这些成员变量的类型在容器里对应的实例（这里UserServiceImpl被@Service标记的）。
+5. 通过反射将对应的成员变量实例注入到成员变量所在类的实例里。
+
+```java
+package org.IoC.inject;
+
+import lombok.extern.slf4j.Slf4j;
+import org.IoC.core.BeanContainer;
+import org.IoC.inject.annotation.Autowired;
+import org.IoC.utils.ClassUtil;
+import org.IoC.utils.ValidationUtil;
+
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.Set;
+
+@Slf4j
+public class DependencyInjector {
+	/**
+	 * bean容器 单例
+	 */
+	private BeanContainer beanContainer;
+
+	public DependencyInjector(){
+		beanContainer = BeanContainer.getInstance();
+	}
+
+	/**
+	 * 执行IoC
+	 */
+	public void doIoC(){
+		if (ValidationUtil.isEmpty(beanContainer.getClasses())){
+			log.warn("empty classSet in BeanContainer");
+			return;
+		}
+		// 1.遍历Bean容器中所有的类对象
+		for (Class<?> clazz : beanContainer.getClasses()) {
+			// 2.遍历Class对象的所有成员变量
+			Field[] fields = clazz.getDeclaredFields();
+			//如果为空，则遍历下一个class
+			if (ValidationUtil.isEmpty(fields)){
+				continue;
+			}
+			System.out.println("获取到的成员变量：" + Arrays.toString(fields));
+			for (Field field : fields) {
+				// 3.找出被Autowired标记的成员变量
+				if (field.isAnnotationPresent(Autowired.class)){
+					System.out.println("筛选出被Autowire标记的成员变量：" + field);
+					Autowired autowired = field.getAnnotation(Autowired.class);
+					String autowiredValue = autowired.value();
+					// 4.获取这些成员变量的类型
+					Class<?> fieldClass = field.getType();
+					// 5.获取这些成员变量的类型在容器里对应的实例
+					Object fieldValue = getFieldInstance(fieldClass, autowiredValue);
+					if (fieldValue == null){
+						throw new RuntimeException("unable to inject relevant type, target fieldClass is: "
+								+ fieldClass.getName() + autowiredValue);
+					}else {
+						// 6.通过反射将对应的成员变量实例注入到成员变量所在类的实例里
+						Object targetBean = beanContainer.getBean(clazz);
+						ClassUtil.setField(field, targetBean, fieldValue, true);
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * 根据Class在beanContainer里获取其实例或者实现类
+	 * @param fieldClass
+	 * @param autowiredValue
+	 * @return
+	 */
+	private Object getFieldInstance(Class<?> fieldClass, String autowiredValue) {
+		Object fieldValue = beanContainer.getBean(fieldClass);
+		//直接可以获取到，比如@Contoller标记的
+		if (fieldValue != null){
+			return fieldValue;
+		}else {
+			//如果是接口，那么你要获取他的是实现类@Service
+			Class<?> implementedClass = getImplementClass(fieldClass, autowiredValue);
+			if (implementedClass != null){
+				return beanContainer.getBean(implementedClass);
+			}else {
+				return null;
+			}
+		}
+	}
+
+	private Class<?> getImplementClass(Class<?> fieldClass, String autowiredValue) {
+		Set<Class<?>> classSet = beanContainer.getClassesBySuper(fieldClass);
+		if (!ValidationUtil.isEmpty(classSet)){
+			//默认value为空
+			if (ValidationUtil.isEmpty(autowiredValue)){
+				//只有一个是实现类
+				if (classSet.size() == 1){
+					return classSet.iterator().next();
+				}else {
+					//如果多于两个实现类并且没有指定value，则抛出异常
+					throw new RuntimeException("multiple implement class for " + fieldClass.getName());
+				}
+			}else {
+				for (Class<?> clazz : classSet) {
+                    //找到匹配的value
+					if (autowiredValue.equals(clazz.getSimpleName())){
+						return clazz;
+					}
+				}
+			}
+		}
+		return null;
+	}
+}
+```
+
+**测试一下：**
+
+**1、UserService只有一个实现类UserServiceImpl。**
+
+```java
+package org.IoC.inject;
+
+import com.zjw.controller.UserController;
+import org.IoC.core.BeanContainer;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+public class DependencyInjectorTest {
+
+	@DisplayName("依赖注入doIoC")
+	@Test
+	public void doIoCTest(){
+		BeanContainer beanContainer = BeanContainer.getInstance();
+		beanContainer.loadBeans("com.zjw");
+		Assertions.assertEquals(true, beanContainer.isLoaded());
+		UserController userController = (UserController) beanContainer.getBean(UserController.class);
+		Assertions.assertEquals(true, userController instanceof UserController);
+		//UserController要加上@Getter注解，以获取注入的service实例
+		Assertions.assertEquals(null, userController.getUserService());
+		new DependencyInjector().doIoC();
+		Assertions.assertNotEquals(null, userController.getUserService());
+	}
+}
+```
+
+![image-20221104151225991](https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041557805.png)
+
+**2、UserService只有一个实现类UserServiceImpl、UserServiceImpl2。**
+
+![image-20221104151327098](https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041557984.png)
+
+给@Autowired指定value值
+
+```java
+@Autowired(value = "UserServiceImpl")
+private UserService userService;
+```
+
+![image-20221104151527252](https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041557562.png)
+
+
+
+## 总结
+
+![1667547977897](https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041557293.jpeg)
